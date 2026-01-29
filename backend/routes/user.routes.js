@@ -1,24 +1,52 @@
 const express = require('express');
 const { verifyToken } = require('../middleware/auth.middleware');
+const {
+  getProfile,
+  updateProfile,
+  updateAvatar,
+  removeAvatar,
+  getUserStats,
+  changePassword,
+  logout,
+} = require('../controllers/user.controller');
+
 const router = express.Router();
-// Kişi 2: Buraya userController import et
 
-// GET /api/user/profile
-router.get('/profile', verifyToken, (req, res) => {
-  // TODO: Kişi 2 - Kullanıcı profili getir
-  res.status(200).json({ message: 'Profile endpoint - Kişi 2' });
-});
+// ===========================
+// Profil Endpointleri
+// ===========================
 
-// PUT /api/user/profile
-router.put('/profile', verifyToken, (req, res) => {
-  // TODO: Kişi 2 - Profili güncelle
-  res.status(200).json({ message: 'Update profile - Kişi 2' });
-});
+// GET /api/user/profile - Profil bilgilerini getir
+router.get('/profile', verifyToken, getProfile);
 
-// GET /api/user/trackers
-router.get('/trackers', verifyToken, (req, res) => {
-  // TODO: Kişi 2 - Tüm takipleri listele
-  res.status(200).json({ message: 'Get all trackers - Kişi 2' });
-});
+// PUT /api/user/profile - Profil bilgilerini güncelle
+router.put('/profile', verifyToken, updateProfile);
+
+// ===========================
+// Avatar Endpointleri
+// ===========================
+
+// PUT /api/user/avatar - Avatar URL'sini güncelle
+router.put('/avatar', verifyToken, updateAvatar);
+
+// DELETE /api/user/avatar - Avatar'ı sil
+router.delete('/avatar', verifyToken, removeAvatar);
+
+// ===========================
+// İstatistik Endpointleri
+// ===========================
+
+// GET /api/user/stats - Kullanıcı istatistiklerini getir
+router.get('/stats', verifyToken, getUserStats);
+
+// ===========================
+// Güvenlik Endpointleri
+// ===========================
+
+// PUT /api/user/change-password - Şifre değiştir
+router.put('/change-password', verifyToken, changePassword);
+
+// POST /api/user/logout - Çıkış yap
+router.post('/logout', verifyToken, logout);
 
 module.exports = router;
