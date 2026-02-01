@@ -14,11 +14,14 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/vibe-trac
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
+
 // Routes - Her kişinin backend'i
 app.use('/api/auth', require('./routes/auth.routes')); // Kişi 1: Login/Register
 app.use('/api/user', require('./routes/user.routes')); // Kişi 2: Profil & Main Menu
 app.use('/api/water', require('./routes/water.routes')); // Kişi 3: Su Takibi
 app.use('/api/calories', require('./routes/calories.routes')); // Kişi 4: Kalori Takibi
+app.use('/api/nutritive', require('./routes/nutritive.values'));
+app.use('/api/macros', require('./routes/macros.routes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
