@@ -5,6 +5,55 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api'; // change to your backend URL if different
 
+// Define interfaces for our data structures
+interface MacrosResponse {
+  inputs: {
+    weight: number;
+    height: number;
+    age: number;
+    pal: number;
+  };
+  formulas: {
+    mifflin_st_jeor: {
+      latex: string;
+      computed: number;
+    };
+    harris_benedict: {
+      latex: string;
+      computed: number;
+    };
+    tdee: {
+      latex: string;
+      computed: number;
+    };
+  };
+  macros: {
+    protein_g: number;
+    protein_pct: number;
+    fat_g: number;
+    fat_pct: number;
+    carbs_g: number;
+    carbs_pct: number;
+  };
+  protein_per_kg: {
+    range_g_per_kg: [number, number];
+  };
+}
+
+interface MealLog {
+  name: string;
+  protein: number;
+  fat: number;
+  carbs: number;
+}
+
+interface Totals {
+  protein: number;
+  fat: number;
+  carbs: number;
+  meals: MealLog[];
+}
+
 const defaultInputs = {
   gender: 'male',
   age: '',
@@ -15,9 +64,9 @@ const defaultInputs = {
 
 export default function MacrosPage() {
   const [inputs, setInputs] = useState(defaultInputs);
-  const [macrosResponse, setMacrosResponse] = useState(null);
+  const [macrosResponse, setMacrosResponse] = useState<MacrosResponse | null>(null);
   const [token, setToken] = useState('');
-  const [totals, setTotals] = useState({ protein: 0, fat: 0, carbs: 0, meals: [] });
+  const [totals, setTotals] = useState<Totals>({ protein: 0, fat: 0, carbs: 0, meals: [] });
   const [meal, setMeal] = useState({ name: '', protein: '', fat: '', carbs: '' });
   const [loadingCalc, setLoadingCalc] = useState(false);
 
@@ -32,7 +81,7 @@ export default function MacrosPage() {
 
   useEffect(() => {
     if (token) {
-      axios.get(`${API_URL}/macros/today`, { headers: { Authorization: `Bearer ${token}` } })
+      axios.get<Totals>(`${API_URL}/macros/today`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => setTotals(r.data))
         .catch(() => setTotals({ protein: 0, fat: 0, carbs: 0, meals: [] }));
     }
@@ -47,11 +96,17 @@ export default function MacrosPage() {
 
     setLoadingCalc(true);
     try {
-      const res = await axios.post(`${API_URL}/nutritive/calculate`, { ...inputs, age, height, weight });
+      const res = await axios.post<MacrosResponse>(`${API_URL}/nutritive/calculate`, { ...inputs, age, height, weight });
       setMacrosResponse(res.data);
       await AsyncStorage.setItem('macroInputs', JSON.stringify(inputs));
     } catch (err) {
-      Alert.alert('Calculation failed', err?.response?.data?.error || err.message);
+      let message = 'An unknown error occurred.';
+      if (axios.isAxiosError(err)) {
+        message = err.response?.data?.error || err.message;
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
+      Alert.alert('Calculation failed', message);
     } finally {
       setLoadingCalc(false);
     }
@@ -64,15 +119,21 @@ export default function MacrosPage() {
     const c = Number(meal.carbs) || 0;
     if (p < 0 || f < 0 || c < 0) return Alert.alert('Enter non-negative values');
     try {
-      const res = await axios.post(`${API_URL}/macros/log`, { protein: p, fat: f, carbs: c, mealName: meal.name }, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.post<Totals>(`${API_URL}/macros/log`, { protein: p, fat: f, carbs: c, mealName: meal.name }, { headers: { Authorization: `Bearer ${token}` } });
       setTotals(res.data);
       setMeal({ name: '', protein: '', fat: '', carbs: '' });
     } catch (err) {
-      Alert.alert('Error logging meal', err?.response?.data?.error || err.message);
+      let message = 'An unknown error occurred.';
+      if (axios.isAxiosError(err)) {
+        message = err.response?.data?.error || err.message;
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
+      Alert.alert('Error logging meal', message);
     }
   };
 
-  const percent = (have, need) => {
+  const percent = (have: number, need: number) => {
     if (!need) return 0;
     return Math.min(100, Math.round((have / need) * 100));
   };
